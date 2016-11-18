@@ -20,6 +20,7 @@ limitations under the License.
 
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/format.hpp>
