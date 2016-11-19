@@ -18,6 +18,7 @@ limitations under the License.
 
 #include "QtKittiVisualizer.h"
 #include "ui_QtKittiVisualizer.h"
+#include "point_cloud_intensity_handler.h"
 
 #include <string>
 
@@ -353,7 +354,7 @@ void KittiVisualizerQt::loadPointCloud()
 
 void KittiVisualizerQt::showPointCloud()
 {
-    KittiPointCloudColorHandlerCustom colorHandler(pointCloud, 255, 255, 255);
+    PointCloudIntensityHandler<KittiPoint> colorHandler(pointCloud);
     pclVisualizer->addPointCloud<KittiPoint>(pointCloud, colorHandler, "point_cloud");
 }
 
@@ -534,7 +535,7 @@ void KittiVisualizerQt::showTrackletInCenter()
         pcl::transformPointCloud(*cloudOutTransformed, *cloudOut, Eigen::Vector3f::Zero(), transformRotation);
 
         // Create color handler for the centered tracklet point cloud
-        KittiPointCloudColorHandlerCustom colorHandler(cloudOut, 0, 255, 0);
+        PointCloudIntensityHandler<KittiPoint> colorHandler(cloudOut);
 
         // Add the centered tracklet point cloud to the visualizer
         pclVisualizer->addPointCloud<KittiPoint>(cloudOut, colorHandler, "centered_tracklet");
