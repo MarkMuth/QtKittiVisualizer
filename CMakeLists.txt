@@ -3,10 +3,11 @@ cmake_minimum_required(VERSION 2.8)
 project(QtKittiVisualizer)
 
 set(PROJECT_BINARY_NAME qt-kitti-visualizer)
+set(CMAKE_AUTOMOC ON)
 
-find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
-include(${QT_USE_FILE})
-add_definitions(${QT_DEFINITIONS})
+find_package(Qt5Gui REQUIRED)
+find_package(Qt5Core REQUIRED)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${QT5Core_EXECUTABLE_COMPILE_FLAGS} ${QT5Gui_EXECUTABLE_COMPILE_FLAGS}")
 
 find_package(Boost 1.54 COMPONENTS program_options filesystem REQUIRED)
 set(Boost_COMPONENTS_INCLUDE_DIRS ${Boost_INCLUDE_DIRS})
@@ -22,7 +23,6 @@ link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 find_package(VTK REQUIRED)
-set(VTK_LIBRARIES vtkRendering vtkGraphics vtkHybrid QVTK)
 
 set(CPP_FILES
     KittiConfig.cpp
@@ -33,10 +33,10 @@ set(CPP_FILES
 set(WRAP_CPP_FILES QtKittiVisualizer.h)
 set(WRAP_UI_FILES QtKittiVisualizer.ui)
 
-qt4_wrap_cpp(PROJECT_HEADERS_MOC ${WRAP_CPP_FILES})
-qt4_wrap_ui(PROJECT_FORMS_HEADERS ${WRAP_UI_FILES})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_SOURCE_DIR})
+include_directories(${Qt5Gui_INCLUDE_DIRS})
+include_directories(${Qt5Core_INCLUDE_DIRS})
 
 add_executable(${PROJECT_BINARY_NAME}
     ${CPP_FILES}
