@@ -25,10 +25,11 @@ limitations under the License.
 #include <boost/filesystem/path.hpp>
 #include <boost/format.hpp>
 
-std::string KittiConfig::data_directory = "../KittiData";
-std::string KittiConfig::raw_data_directory = "raw";
+//std::string KittiConfig::data_directory = "../KittiData";
+std::string KittiConfig::data_directory = "D:\\KITTI\\2011_09_26";
+std::string KittiConfig::raw_data_directory = "";
 std::string KittiConfig::dataset_folder_template = "%|04|_sync";
-std::string KittiConfig::point_cloud_directory = "velodyne_points/data";
+std::string KittiConfig::point_cloud_directory = "velodyne_points\\data";
 std::string KittiConfig::point_cloud_file_template = "%|010|.bin";
 std::string KittiConfig::tracklets_directory = ".";
 std::string KittiConfig::tracklets_file_name = "tracklet_labels.xml";

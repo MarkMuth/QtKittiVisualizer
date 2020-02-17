@@ -11,6 +11,7 @@
 #include <boost/archive/xml_oarchive.hpp>
 #include <boost/archive/xml_iarchive.hpp>
 
+extern void usleep(unsigned int usec);
 class Tracklets {
 
 public:

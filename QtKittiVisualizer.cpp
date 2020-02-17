@@ -46,6 +46,20 @@ limitations under the License.
 
 typedef pcl::visualization::PointCloudColorHandlerCustom<KittiPoint> KittiPointCloudColorHandlerCustom;
 
+
+void usleep(unsigned int usec)
+{
+    HANDLE timer;
+    LARGE_INTEGER ft;
+
+    ft.QuadPart = -(10 * (__int64)usec);
+
+    timer = CreateWaitableTimer(NULL, TRUE, NULL);
+    SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
+    WaitForSingleObject(timer, INFINITE);
+    CloseHandle(timer);
+}
+
 KittiVisualizerQt::KittiVisualizerQt(QWidget *parent, int argc, char** argv) :
     QMainWindow(parent),
     ui(new Ui::KittiVisualizerQt),
@@ -110,6 +124,7 @@ KittiVisualizerQt::KittiVisualizerQt(QWidget *parent, int argc, char** argv) :
     connect(ui->checkBox_showTrackletBoundingBoxes, SIGNAL (toggled(bool)), this, SLOT (showTrackletBoundingBoxesToggled(bool)));
     connect(ui->checkBox_showTrackletPointClouds,   SIGNAL (toggled(bool)), this, SLOT (showTrackletPointCloudsToggled(bool)));
     connect(ui->checkBox_showTrackletInCenter,      SIGNAL (toggled(bool)), this, SLOT (showTrackletInCenterToggled(bool)));
+    connect(ui->actionExit,                         SIGNAL (triggered()),   this, SLOT (exitApplication()));
 }
 
 KittiVisualizerQt::~KittiVisualizerQt()
@@ -151,11 +166,13 @@ int KittiVisualizerQt::parseCommandLineOptions(int argc, char** argv)
 bool KittiVisualizerQt::loadNextFrame()
 {
     newFrameRequested(frame_index + 1);
+    return true;
 }
 
 bool KittiVisualizerQt::loadPreviousFrame()
 {
     newFrameRequested(frame_index - 1);
+    return true;
 }
 
 void KittiVisualizerQt::getTrackletColor(const KittiTracklet& tracklet, int &r, int& g, int& b)
@@ -428,9 +445,9 @@ void KittiVisualizerQt::updateTrackletLabel()
 
 void KittiVisualizerQt::showTrackletBoxes()
 {
-    double boxHeight = 0.0d;
-    double boxWidth = 0.0d;
-    double boxLength = 0.0d;
+    double boxHeight = 0.0f;
+    double boxWidth = 0.0f;
+    double boxLength = 0.0f;
     int pose_number = 0;
 
     for (int i = 0; i < availableTracklets.size(); ++i)
@@ -568,4 +585,9 @@ void KittiVisualizerQt::keyboardEventOccurred (const pcl::visualization::Keyboar
             loadNextFrame();
         }
     }
+}
+
+void KittiVisualizerQt::exitApplication(void)
+{
+    QCoreApplication::exit();
 }

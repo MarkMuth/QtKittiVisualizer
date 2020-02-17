@@ -68,6 +68,7 @@ public slots:
     void showTrackletBoundingBoxesToggled(bool value);
     void showTrackletPointCloudsToggled(bool value);
     void showTrackletInCenterToggled(bool value);
+    void exitApplication(void);
 
 private:
 
