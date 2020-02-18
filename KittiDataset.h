@@ -44,6 +44,7 @@ public:
     KittiDataset(int dataset);
     int getNumberOfFrames();
     KittiPointCloud::Ptr getPointCloud(int frameId);
+    std::string getImageFileName(int frameId);
     KittiPointCloud::Ptr getTrackletPointCloud(KittiPointCloud::Ptr& pointCloud, const KittiTracklet& tracklet, int frameId);
     Tracklets& getTracklets();
 

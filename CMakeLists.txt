@@ -52,6 +52,7 @@ add_definitions(${PCL_DEFINITIONS})
 set(CPP_FILES
     KittiConfig.cpp
     KittiDataset.cpp
+    KittiImage.cpp
     main.cpp
     QtKittiVisualizer.cpp
 )

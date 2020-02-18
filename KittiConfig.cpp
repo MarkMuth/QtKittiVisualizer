@@ -31,6 +31,8 @@ std::string KittiConfig::raw_data_directory = "";
 std::string KittiConfig::dataset_folder_template = "%|04|_sync";
 std::string KittiConfig::point_cloud_directory = "velodyne_points\\data";
 std::string KittiConfig::point_cloud_file_template = "%|010|.bin";
+std::string KittiConfig::image_directory = "image_02\\data";
+std::string KittiConfig::image_file_template = "%|010|.png";
 std::string KittiConfig::tracklets_directory = ".";
 std::string KittiConfig::tracklets_file_name = "tracklet_labels.xml";
 
@@ -61,6 +63,24 @@ boost::filesystem::path KittiConfig::getTrackletsPath(int dataset)
             / tracklets_file_name
             ;
 }
+
+boost::filesystem::path KittiConfig::getImagePath(int dataset)
+{
+
+    return boost::filesystem::path(data_directory)
+        / raw_data_directory
+        / (boost::format(dataset_folder_template) % dataset).str()
+        / image_directory
+        ;
+}
+boost::filesystem::path KittiConfig::getImagePath(int dataset, int frameId)
+{
+
+    return getImagePath(dataset) 
+        / (boost::format(image_file_template) % frameId).str()
+        ;
+}
+
 
 int KittiConfig::getDatasetNumber(int index)
 {
