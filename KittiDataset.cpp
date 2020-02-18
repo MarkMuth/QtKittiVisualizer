@@ -85,6 +85,11 @@ KittiPointCloud::Ptr KittiDataset::getPointCloud(int frameId)
     return cloud;
 }
 
+std::string KittiDataset::getImageFileName(int frameId)
+{
+    return std::string(KittiConfig::getImagePath(_dataset, frameId).string());
+}
+
 KittiPointCloud::Ptr KittiDataset::getTrackletPointCloud(KittiPointCloud::Ptr& pointCloud, const KittiTracklet& tracklet, int frameId)
 {
     int pose_number = frameId - tracklet.first_frame;

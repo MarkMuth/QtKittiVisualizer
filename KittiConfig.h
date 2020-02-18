@@ -52,6 +52,8 @@ public:
     static boost::filesystem::path getPointCloudPath(int dataset);
     static boost::filesystem::path getPointCloudPath(int dataset,int frameId);
     static boost::filesystem::path getTrackletsPath(int dataset);
+    static boost::filesystem::path getImagePath(int dataset);
+    static boost::filesystem::path getImagePath(int dataset, int frameId);
 
     /** Contains the numbers of data sets available from your data set folder */
     static const std::vector<int> availableDatasets;
@@ -67,6 +69,8 @@ private:
     static std::string dataset_folder_template;
     static std::string point_cloud_directory;
     static std::string point_cloud_file_template;
+    static std::string image_directory;
+    static std::string image_file_template;
     static std::string tracklets_directory;
     static std::string tracklets_file_name;
 

@@ -68,6 +68,8 @@ public slots:
     void showTrackletBoundingBoxesToggled(bool value);
     void showTrackletPointCloudsToggled(bool value);
     void showTrackletInCenterToggled(bool value);
+    void exitApplication(void);
+    void camViewChanged(int index);
 
 private:
 
@@ -89,7 +91,7 @@ private:
     void updateDatasetLabel();
     void updateFrameLabel();
     void updateTrackletLabel();
-
+    void loadImageFile();
     void loadPointCloud();
     void showPointCloud();
     void hidePointCloud();

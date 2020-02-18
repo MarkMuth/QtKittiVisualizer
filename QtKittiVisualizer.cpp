@@ -46,7 +46,28 @@ limitations under the License.
 
 typedef pcl::visualization::PointCloudColorHandlerCustom<KittiPoint> KittiPointCloudColorHandlerCustom;
 
-KittiVisualizerQt::KittiVisualizerQt(QWidget *parent, int argc, char** argv) :
+
+// enum for the camera angles
+enum CameraView { front, eye_level, birds_eye, left_pers, right_pers, top };
+static const QString CAMVIEWSTR[] = { "Front", "Eye Level", "Birds Eye", "Left Perspective", "Right Perspective", "Top" };
+
+
+
+void usleep(unsigned int usec)
+{
+    HANDLE timer;
+    LARGE_INTEGER ft;
+
+    ft.QuadPart = -(10 * (__int64)usec);
+
+    timer = CreateWaitableTimer(NULL, TRUE, NULL);
+    SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
+    WaitForSingleObject(timer, INFINITE);
+    CloseHandle(timer);
+}
+
+
+KittiVisualizerQt::KittiVisualizerQt(QWidget* parent, int argc, char** argv) :
     QMainWindow(parent),
     ui(new Ui::KittiVisualizerQt),
     dataset_index(0),
@@ -66,10 +87,17 @@ KittiVisualizerQt::KittiVisualizerQt(QWidget *parent, int argc, char** argv) :
 
     // Set up user interface
     ui->setupUi(this);
+    for (int i = CameraView::front; i <= CameraView::top; i++) {
+        ui->viewComboBox->addItem(CAMVIEWSTR[i]);
+    }
+
+    ui->toolBar->addWidget(ui->viewComboBox);
     ui->qvtkWidget_pclViewer->SetRenderWindow(pclVisualizer->getRenderWindow());
+    pclVisualizer->initCameraParameters();
     pclVisualizer->setupInteractor(ui->qvtkWidget_pclViewer->GetInteractor(), ui->qvtkWidget_pclViewer->GetRenderWindow());
     pclVisualizer->setBackgroundColor(0, 0, 0);
     pclVisualizer->addCoordinateSystem(1.0);
+    
     pclVisualizer->registerKeyboardCallback(&KittiVisualizerQt::keyboardEventOccurred, *this, 0);
     this->setWindowTitle("Qt KITTI Visualizer");
     ui->qvtkWidget_pclViewer->update();
@@ -79,6 +107,9 @@ KittiVisualizerQt::KittiVisualizerQt(QWidget *parent, int argc, char** argv) :
     loadPointCloud();
     if (pointCloudVisible)
         showPointCloud();
+
+    loadImageFile();
+
     loadAvailableTracklets();
     if (trackletBoundingBoxesVisible)
         showTrackletBoxes();
@@ -110,6 +141,11 @@ KittiVisualizerQt::KittiVisualizerQt(QWidget *parent, int argc, char** argv) :
     connect(ui->checkBox_showTrackletBoundingBoxes, SIGNAL (toggled(bool)), this, SLOT (showTrackletBoundingBoxesToggled(bool)));
     connect(ui->checkBox_showTrackletPointClouds,   SIGNAL (toggled(bool)), this, SLOT (showTrackletPointCloudsToggled(bool)));
     connect(ui->checkBox_showTrackletInCenter,      SIGNAL (toggled(bool)), this, SLOT (showTrackletInCenterToggled(bool)));
+    connect(ui->actionExit,                         SIGNAL (triggered()),   this, SLOT (exitApplication()));
+    connect(ui->viewComboBox,                       SIGNAL (activated(int)),this, SLOT (camViewChanged(int)));
+    
+    ui->viewComboBox->setCurrentIndex(CameraView::birds_eye);
+    camViewChanged(CameraView::birds_eye);
 }
 
 KittiVisualizerQt::~KittiVisualizerQt()
@@ -151,11 +187,13 @@ int KittiVisualizerQt::parseCommandLineOptions(int argc, char** argv)
 bool KittiVisualizerQt::loadNextFrame()
 {
     newFrameRequested(frame_index + 1);
+    return true;
 }
 
 bool KittiVisualizerQt::loadPreviousFrame()
 {
     newFrameRequested(frame_index - 1);
+    return true;
 }
 
 void KittiVisualizerQt::getTrackletColor(const KittiTracklet& tracklet, int &r, int& g, int& b)
@@ -208,6 +246,7 @@ void KittiVisualizerQt::newDatasetRequested(int value)
     loadPointCloud();
     if (pointCloudVisible)
         showPointCloud();
+    loadImageFile();
     loadAvailableTracklets();
     if (trackletBoundingBoxesVisible)
         showTrackletBoxes();
@@ -233,6 +272,7 @@ void KittiVisualizerQt::newDatasetRequested(int value)
     updateFrameLabel();
     updateTrackletLabel();
     ui->qvtkWidget_pclViewer->update();
+    ui->imageWidget->update();
 }
 
 void KittiVisualizerQt::newFrameRequested(int value)
@@ -260,6 +300,7 @@ void KittiVisualizerQt::newFrameRequested(int value)
     loadPointCloud();
     if (pointCloudVisible)
         showPointCloud();
+    loadImageFile();
     loadAvailableTracklets();
     if (trackletBoundingBoxesVisible)
         showTrackletBoxes();
@@ -351,6 +392,13 @@ void KittiVisualizerQt::loadPointCloud()
     pointCloud = dataset->getPointCloud(frame_index);
 }
 
+void KittiVisualizerQt::loadImageFile()
+{
+    ui->imageWidget->setPixmapFile(dataset->getImageFileName(frame_index));
+    ui->imageWidget->repaint();
+    std::cout << "loaded:" << dataset->getImageFileName(frame_index) << std::endl;
+}
+
 void KittiVisualizerQt::showPointCloud()
 {
     KittiPointCloudColorHandlerCustom colorHandler(pointCloud, 255, 255, 255);
@@ -428,9 +476,9 @@ void KittiVisualizerQt::updateTrackletLabel()
 
 void KittiVisualizerQt::showTrackletBoxes()
 {
-    double boxHeight = 0.0d;
-    double boxWidth = 0.0d;
-    double boxLength = 0.0d;
+    double boxHeight = 0.0f;
+    double boxWidth = 0.0f;
+    double boxLength = 0.0f;
     int pose_number = 0;
 
     for (int i = 0; i < availableTracklets.size(); ++i)
@@ -567,5 +615,74 @@ void KittiVisualizerQt::keyboardEventOccurred (const pcl::visualization::Keyboar
         {
             loadNextFrame();
         }
+    }
+}
+
+void KittiVisualizerQt::exitApplication(void)
+{
+    QCoreApplication::exit();
+}
+
+/** \brief Set the camera pose given by position, viewpoint and up vector
+          * \param[in] pos_x the x coordinate of the camera location
+          * \param[in] pos_y the y coordinate of the camera location
+          * \param[in] pos_z the z coordinate of the camera location
+          * \param[in] view_x the x component of the view point of the camera
+          * \param[in] view_y the y component of the view point of the camera
+          * \param[in] view_z the z component of the view point of the camera
+          * \param[in] up_x the x component of the view up direction of the camera
+          * \param[in] up_y the y component of the view up direction of the camera
+          * \param[in] up_z the y component of the view up direction of the camera
+          * \param[in] viewport the viewport to modify camera of (0 modifies all cameras)
+          */
+
+
+
+void KittiVisualizerQt::camViewChanged(int index)
+{
+    std::cout << "Selected View:" << index << std::endl;
+
+    switch (index) {
+    case CameraView::front:
+        pclVisualizer->setCameraPosition(-100, 0, 0,
+                                        -17, 9.5, -9.5,
+                                         0,0,1);
+        break;
+
+    case CameraView::eye_level:
+        pclVisualizer->setCameraPosition(-100, 0, 20, 
+                                        -17, 9.5, -9.5,
+                                         0, 0, 1);
+        break;
+
+    case CameraView::birds_eye:
+        pclVisualizer->setCameraPosition(-100, 10, 30,
+                                        -17, 9.5, -9.5,
+                                         0, 0, 1);
+        break;
+
+
+    case CameraView::left_pers:
+        pclVisualizer->setCameraPosition(22, 150, 57,
+                                        1, -57, 8,
+                                        0, 0, 1);
+        break;
+
+
+
+    case CameraView::right_pers:
+        pclVisualizer->setCameraPosition(-22, -150, 57,
+                                         1, -57, 8,
+                                         0, 0, 1);
+        break;
+
+
+    case CameraView::top: /* facing down on y */
+    default:
+
+            pclVisualizer->setCameraPosition(1, 29, -110,
+                                             21, 6, 147, /* focal point */
+                                             0, -1, 0);
+        break;
     }
 }

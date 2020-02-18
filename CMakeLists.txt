@@ -10,6 +10,13 @@ endif()
 
 project(QtKittiVisualizer)
 
+
+
+
+if (MSVC)
+  add_definitions(-D_CRT_SECURE_NO_WARNINGS -DBOOST_ALL_NO_LIB -DBOOST_ALL_DYN_LINK -DBOOST_LOG_DYN_LINK)
+endif()
+
 find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
 
@@ -29,7 +36,7 @@ set(PROJECT_BINARY_NAME qt-kitti-visualizer)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR})
 
-find_package(Boost 1.54 COMPONENTS program_options filesystem REQUIRED)
+find_package(Boost 1.54 COMPONENTS program_options filesystem serialization REQUIRED)
 set(Boost_COMPONENTS_INCLUDE_DIRS ${Boost_INCLUDE_DIRS})
 set(Boost_COMPONENTS_LIBRARY_DIRS ${Boost_LIBRARY_DIRS})
 set(Boost_COMPONENTS_LIBRARIES ${Boost_LIBRARIES})
@@ -45,6 +52,7 @@ add_definitions(${PCL_DEFINITIONS})
 set(CPP_FILES
     KittiConfig.cpp
     KittiDataset.cpp
+    KittiImage.cpp
     main.cpp
     QtKittiVisualizer.cpp
 )
