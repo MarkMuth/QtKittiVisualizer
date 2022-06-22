@@ -1,0 +1,13 @@
+diff --git a/io/CMakeLists.txt b/io/CMakeLists.txt
+index 163639b..c249aee 100644
+--- a/io/CMakeLists.txt
++++ b/io/CMakeLists.txt
+@@ -347,6 +347,8 @@ target_link_libraries("${LIB_NAME}" Boost::boost Boost::filesystem Boost::iostre
+ if(VTK_FOUND)
+   if(${VTK_VERSION} VERSION_GREATER_EQUAL 9.0)
+     target_link_libraries("${LIB_NAME}" 
++                          VTK::FiltersCore
++                          VTK::FiltersGeneral
+                           VTK::IOImage
+                           VTK::IOGeometry
+                           VTK::IOPLY)

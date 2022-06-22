@@ -39,6 +39,10 @@ limitations under the License.
 #include <pcl/visualization/point_cloud_color_handlers.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
+#include <vtkGenericOpenGLRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkSmartPointer.h>
+
 #include <KittiConfig.h>
 #include <KittiDataset.h>
 
@@ -46,17 +50,17 @@ limitations under the License.
 
 typedef pcl::visualization::PointCloudColorHandlerCustom<KittiPoint> KittiPointCloudColorHandlerCustom;
 
-KittiVisualizerQt::KittiVisualizerQt(QWidget *parent, int argc, char** argv) :
-    QMainWindow(parent),
-    ui(new Ui::KittiVisualizerQt),
-    dataset_index(0),
-    frame_index(0),
-    tracklet_index(0),
-    pclVisualizer(new pcl::visualization::PCLVisualizer("PCL Visualizer", false)),
-    pointCloudVisible(true),
-    trackletBoundingBoxesVisible(true),
-    trackletPointsVisible(true),
-    trackletInCenterVisible(true)
+KittiVisualizerQt::KittiVisualizerQt(QWidget *parent, int argc, char** argv)
+    : QMainWindow(parent)
+    , ui(new Ui::KittiVisualizerQt)
+    , dataset_index(0)
+    , frame_index(0)
+    , tracklet_index(0)
+    , pclVisualizer(nullptr)
+    , pointCloudVisible(true)
+    , trackletBoundingBoxesVisible(true)
+    , trackletPointsVisible(true)
+    , trackletInCenterVisible(true)
 {
     int invalidOptions = parseCommandLineOptions(argc, argv);
     if (invalidOptions)
@@ -66,11 +70,25 @@ KittiVisualizerQt::KittiVisualizerQt(QWidget *parent, int argc, char** argv) :
 
     // Set up user interface
     ui->setupUi(this);
-    ui->qvtkWidget_pclViewer->SetRenderWindow(pclVisualizer->getRenderWindow());
-    pclVisualizer->setupInteractor(ui->qvtkWidget_pclViewer->GetInteractor(), ui->qvtkWidget_pclViewer->GetRenderWindow());
+
+    vtkNew<vtkGenericOpenGLRenderWindow> renderWindow;
+    vtkNew<vtkRenderer> renderer;
+    renderWindow->AddRenderer(renderer);
+
+    pclVisualizer.reset(
+        new pcl::visualization::PCLVisualizer(
+             renderer, renderWindow,
+             "pclVisualizer", false));
+
+    ui->qvtkWidget_pclViewer->setRenderWindow(
+        pclVisualizer->getRenderWindow());
+    pclVisualizer->setupInteractor(
+        ui->qvtkWidget_pclViewer->GetInteractor(),
+        ui->qvtkWidget_pclViewer->GetRenderWindow());
     pclVisualizer->setBackgroundColor(0, 0, 0);
     pclVisualizer->addCoordinateSystem(1.0);
-    pclVisualizer->registerKeyboardCallback(&KittiVisualizerQt::keyboardEventOccurred, *this, 0);
+    pclVisualizer->registerKeyboardCallback(
+        &KittiVisualizerQt::keyboardEventOccurred, *this, 0);
     this->setWindowTitle("Qt KITTI Visualizer");
     ui->qvtkWidget_pclViewer->update();
 
@@ -151,11 +169,13 @@ int KittiVisualizerQt::parseCommandLineOptions(int argc, char** argv)
 bool KittiVisualizerQt::loadNextFrame()
 {
     newFrameRequested(frame_index + 1);
+    return false;
 }
 
 bool KittiVisualizerQt::loadPreviousFrame()
 {
     newFrameRequested(frame_index - 1);
+    return false;
 }
 
 void KittiVisualizerQt::getTrackletColor(const KittiTracklet& tracklet, int &r, int& g, int& b)

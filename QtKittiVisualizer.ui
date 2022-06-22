@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-Copyright 2016 Mark Muth
+Copyright 2022 Mark Muth
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -159,7 +159,7 @@ limitations under the License.
         </layout>
        </widget>
       </widget>
-      <widget class="QVTKWidget" name="qvtkWidget_pclViewer" native="true">
+      <widget class="QVTKOpenGLStereoWidget" name="qvtkWidget_pclViewer" native="true">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
          <horstretch>0</horstretch>
@@ -200,9 +200,10 @@ limitations under the License.
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QVTKWidget</class>
+   <class>QVTKOpenGLStereoWidget</class>
    <extends>QWidget</extends>
-   <header>QVTKWidget.h</header>
+   <header>QVTKOpenGLStereoWidget.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <tabstops>

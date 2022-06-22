@@ -1,35 +1,57 @@
-# Resources:
-#
-# http://www.vtk.org/Wiki/VTK/Examples/Cxx/Qt/RenderWindowNoUiFile
-
-cmake_minimum_required(VERSION 2.8)
-
-if(POLICY CMP0020)
-  cmake_policy(SET CMP0020 NEW)
-endif()
+cmake_minimum_required(VERSION 3.16)
 
 project(QtKittiVisualizer)
 
-find_package(VTK REQUIRED)
-include(${VTK_USE_FILE})
+# Make sure PCL finds the installed Eigen3 and FLANN:
+# FindEigen.cmake and FindFLANN.cmake
+# were just copied from pcl-1.12.1/cmake/Modules
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
-message(STATUS "VTK_QT_VERSION: " ${VTK_QT_VERSION})
-if(${VTK_VERSION} VERSION_GREATER "6" AND VTK_QT_VERSION VERSION_GREATER "4")
-  message(STATUS "Using Qt5")
-  # Instruct CMake to run moc automatically when needed.
-  set(CMAKE_AUTOMOC ON)
-  find_package(Qt5Widgets REQUIRED QUIET)
-else()
-  message(STATUS "Using Qt4")
-  find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
-  include(${QT_USE_FILE})
+# You can alternatively include the modules from your PCL source directly:
+#set(CMAKE_MODULE_PATH $ENV{HOME}/pcl-1.12.1/cmake/Modules)
+
+#message(STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH})
+
+
+# VTK
+# ===
+
+# Hint were to find the VTK source code.
+if (NOT DEFINED VTK_DIR)
+    set(VTK_DIR $ENV{HOME}/vtk-9.1.0-build/)
 endif()
 
-set(PROJECT_BINARY_NAME qt-kitti-visualizer)
+find_package(VTK 9.1.0 REQUIRED COMPONENTS
+  CommonCore
+  FiltersSources
+  GUISupportQt
+  InteractionStyle
+  RenderingCore
+  RenderingOpenGL2
+)
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR})
+message(STATUS "VTK_QT_VERSION: " ${VTK_QT_VERSION})
 
-find_package(Boost 1.54 COMPONENTS program_options filesystem REQUIRED)
+
+# Qt
+# ==
+
+find_package(Qt5Widgets REQUIRED COMPONENTS
+  Core
+  Gui
+  REQUIRED
+)
+
+
+# Boost
+# =====
+
+find_package(Boost 1.71 COMPONENTS
+  program_options
+  filesystem
+  REQUIRED
+)
+message(STATUS "Boost_VERSION: " ${Boost_VERSION})
 set(Boost_COMPONENTS_INCLUDE_DIRS ${Boost_INCLUDE_DIRS})
 set(Boost_COMPONENTS_LIBRARY_DIRS ${Boost_LIBRARY_DIRS})
 set(Boost_COMPONENTS_LIBRARIES ${Boost_LIBRARIES})
@@ -37,60 +59,53 @@ include_directories(${Boost_COMPONENTS_INCLUDE_DIRS})
 link_directories(${Boost_COMPONENTS_LIBRARY_DIRS})
 add_definitions(${Boost_COMPONENTS_DEFINITIONS})
 
-find_package(PCL 1.8 REQUIRED)
+
+# PCL
+# ===
+
+# Hint were to find the PCL source code.
+if (NOT DEFINED PCL_DIR)
+    set(PCL_DIR $ENV{HOME}/pcl-1.12.1-build/)
+endif()
+
+find_package(PCL 1.12.1 REQUIRED)
+message(STATUS "PCL_VERSION: " ${PCL_VERSION})
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
+
+# Target: qt-kitti-visualizer
+# ===========================
+
+set(PROJECT_BINARY_NAME qt-kitti-visualizer)
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR})
+
 set(CPP_FILES
-    KittiConfig.cpp
-    KittiDataset.cpp
-    main.cpp
-    QtKittiVisualizer.cpp
+  KittiConfig.cpp
+  KittiDataset.cpp
+  main.cpp
+  QtKittiVisualizer.cpp
 )
-set(WRAP_CPP_FILES QtKittiVisualizer.h)
-set(WRAP_UI_FILES QtKittiVisualizer.ui)
 
-if(${VTK_VERSION} VERSION_GREATER "6" AND VTK_QT_VERSION VERSION_GREATER "4")
-  qt5_wrap_ui(PROJECT_FORMS_HEADERS ${WRAP_UI_FILES} )
-  # CMAKE_AUTOMOC in ON so the MOC headers will be automatically wrapped.
-  add_executable(${PROJECT_BINARY_NAME}
-    ${CPP_FILES}
-    ${PROJECT_FORMS_HEADERS}
-    ${WRAP_CPP_FILES})
-  qt5_use_modules(${PROJECT_BINARY_NAME} Core Gui)
-  target_link_libraries(${PROJECT_BINARY_NAME}
-      ${PCL_LIBRARIES}
-      ${VTK_LIBRARIES}
-      ${Boost_COMPONENTS_LIBRARIES})
-else()
-  QT4_WRAP_UI(PROJECT_FORMS_HEADERS ${WRAP_UI_FILES})
-  QT4_WRAP_CPP(PROJECT_HEADERS_MOC ${WRAP_CPP_FILES})
-  add_executable(${PROJECT_BINARY_NAME}
-      ${CPP_FILES}
-      ${PROJECT_FORMS_HEADERS}
-      ${PROJECT_HEADERS_MOC})
+add_executable(${PROJECT_BINARY_NAME}
+  ${CPP_FILES}
+)
 
-  if(VTK_LIBRARIES)
-    if(${VTK_VERSION} VERSION_LESS "6")
-      target_link_libraries(${PROJECT_BINARY_NAME}
-          ${PCL_LIBRARIES}
-          ${VTK_LIBRARIES}
-          QVTK
-          ${Boost_COMPONENTS_LIBRARIES})
-    else()
-      target_link_libraries(${PROJECT_BINARY_NAME}
-          ${PCL_LIBRARIES}
-          ${VTK_LIBRARIES}
-          ${Boost_COMPONENTS_LIBRARIES})
-    endif()
-  else()
-    target_link_libraries(${PROJECT_BINARY_NAME}
-        vtkHybrid
-        QVTK
-        vtkViews
-        ${QT_LIBRARIES}
-        ${PCL_LIBRARIES}
-        ${Boost_COMPONENTS_LIBRARIES})
-  endif()
-endif()
+target_link_libraries(${PROJECT_BINARY_NAME} PRIVATE
+  ${PCL_LIBRARIES}
+  Qt5::Widgets
+  VTK::CommonCore
+  VTK::FiltersSources
+  VTK::GUISupportQt
+  VTK::InteractionStyle
+  VTK::RenderingCore
+  VTK::RenderingOpenGL2
+  ${Boost_COMPONENTS_LIBRARIES}
+)
+
+set_target_properties(${PROJECT_BINARY_NAME} PROPERTIES
+  AUTOMOC ON
+  AUTOUIC ON
+)
